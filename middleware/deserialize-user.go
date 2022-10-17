@@ -14,7 +14,7 @@ import (
 func DeserializeUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var access_token string
-		cookie, err := ctx.Cookie("access_token")
+		cookie, err := ctx.Cookie("accessToken")
 
 		authorizationHeader := ctx.Request.Header.Get("Authorization")
 		fields := strings.Fields(authorizationHeader)

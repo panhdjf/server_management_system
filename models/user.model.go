@@ -10,18 +10,21 @@ type User struct {
 	Name      string `gorm:"type:varchar(255);not null"`
 	Email     string `gorm:"uniqueIndex;not null"`
 	Password  string `gorm:"not null"`
+	Verified  bool   `gorm:"not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-type SignUpInput struct { //register
+//register struct
+type SignUpInput struct {
 	Name            string `json:"name" binding:"required"`
 	Email           string `json:"email" binding:"required"`
 	Password        string `json:"password" binding:"required,min=8"`
 	PasswordConfirm string `json:"passwordConfirm" binding:"required"`
 }
 
-type SignInInput struct { //login
+//login struct
+type SignInInput struct {
 	Email    string `json:"email"  binding:"required"`
 	Password string `json:"password"  binding:"required"`
 }
