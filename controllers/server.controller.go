@@ -55,7 +55,7 @@ func (sc *SeverController) CreateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "data": newServer})
 }
 
-func (sc *SeverController) ViewServers(ctx *gin.Context) {
+func (sc *SeverController) SortServers(ctx *gin.Context) {
 	var offset = ctx.DefaultQuery("offset", "0")
 	var limit = ctx.DefaultQuery("limit", "10")
 
@@ -77,6 +77,26 @@ func (sc *SeverController) ViewServers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "results": len(servers), "data": servers})
 }
 
+func (sc *SeverController) FilterServers(ctx *gin.Context) {
+	var offset = ctx.DefaultQuery("offset", "0")
+	var limit = ctx.DefaultQuery("limit", "10")
+
+	intOffset, _ := strconv.Atoi(offset)
+	intLimit, _ := strconv.Atoi(limit)
+
+	var filterRequired = ctx.DefaultQuery("filterRequired", "online")
+	var servers []models.Server
+	//example: filter with status
+
+	result := sc.DB.Limit(intLimit).Offset(intOffset).Find(&servers, "status = ?", filterRequired)
+
+	if result.Error != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "filter": "status", "results": len(servers), "data": servers})
+}
+
 func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 	currentUser := ctx.MustGet("currentUser").(models.User)
@@ -87,7 +107,7 @@ func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 		return
 	}
 	var updatedServer models.Server
-	result := sc.DB.First(&updatedServer, "sever_id = ?", serverId)
+	result := sc.DB.First(&updatedServer, "id = ?", serverId)
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that Id exists"})
 		return
@@ -111,7 +131,7 @@ func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 func (sc *SeverController) DeletePost(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 
-	result := sc.DB.Delete(&models.Server{}, "sever_id = ?", serverId)
+	result := sc.DB.Delete(&models.Server{}, "id = ?", serverId)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that Id exists"})
@@ -172,8 +192,6 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 	return
 	var servers []models.Server
 	sc.DB.Offset(0).Find(&servers)
-	// countAccept := 0
-	// countFail := 0
 	now := time.Now()
 	var serversAccept []models.Server
 	var serversFail []models.Server
@@ -189,11 +207,9 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 					LastUpdated: now,
 				}
 				if server.ID == newServer.ID || server.Name == newServer.Name {
-					// countFail++
 					serversFail = append(serversFail, newServer)
 					continue
 				}
-				// countAccept ++
 				serversAccept = append(serversAccept, newServer)
 			}
 		}
