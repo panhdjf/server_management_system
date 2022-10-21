@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -65,11 +63,11 @@ func (sc *SeverController) ViewServers(ctx *gin.Context) {
 	intLimit, _ := strconv.Atoi(limit)
 	offset := (intPage - 1) * intLimit
 
-	// var required = ctx.DefaultQuery("required", "")
-	var valueRequired = ctx.DefaultQuery("valueRequired", "1")
+	var requiredFilter = ctx.DefaultQuery("requiredFilter", "")
+	var requiredSort = ctx.DefaultQuery("requiredSort", "name")
 
 	var servers []models.Server
-	result := sc.DB.Limit(intLimit).Offset(offset).Find(&servers, "status = ?", valueRequired)
+	result := sc.DB.Limit(intLimit).Offset(offset).Order(requiredSort).Find(&servers, "status = ?", requiredFilter)
 
 	// switch required {
 	// case "status":
@@ -86,47 +84,47 @@ func (sc *SeverController) ViewServers(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
 		return
 	}
-	SortSever(servers, "serverStatus")
+
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "results": len(servers), "data": servers})
 }
 
-func SortSever(servers []models.Server, required string) []models.Server {
-	switch required {
-	case "serverName":
-		sort.Slice(servers, func(i, j int) bool {
-			return servers[i].Name < servers[j].Name
-		})
-	case "serverIpv4":
-		sort.Slice(servers, func(i, j int) bool {
-			return servers[i].Ipv4 < servers[j].Ipv4
-		})
+// func SortSever(servers []models.Server, required string) []models.Server {
+// 	switch required {
+// 	case "serverName":
+// 		sort.Slice(servers, func(i, j int) bool {
+// 			return servers[i].Name < servers[j].Name
+// 		})
+// 	case "serverIpv4":
+// 		sort.Slice(servers, func(i, j int) bool {
+// 			return servers[i].Ipv4 < servers[j].Ipv4
+// 		})
 
-	case "serverUser":
-		sort.Slice(servers, func(i, j int) bool {
-			return servers[i].User < servers[j].User
-		})
+// 	case "serverUser":
+// 		sort.Slice(servers, func(i, j int) bool {
+// 			return servers[i].User < servers[j].User
+// 		})
 
-	case "serverStatus":
-		sort.Slice(servers, func(i, j int) bool {
-			return servers[i].Status < servers[j].Status
-		})
+// 	case "serverStatus":
+// 		sort.Slice(servers, func(i, j int) bool {
+// 			return servers[i].Status < servers[j].Status
+// 		})
 
-	// case "sort by created time":
-	// 	sort.Slice(servers, func(i, j int) bool {
-	// 		return servers[i].CreatedTime < servers[j].CreatedTime
-	// 	})
+// 	// case "sort by created time":
+// 	// 	sort.Slice(servers, func(i, j int) bool {
+// 	// 		return servers[i].CreatedTime < servers[j].CreatedTime
+// 	// 	})
 
-	// case "sort by last updated time":
-	// 	sort.Slice(servers, func(i, j int) bool {
-	// 		return servers[i].LastUpdated < servers[j].LastUpdated
-	// 	})
+// 	// case "sort by last updated time":
+// 	// 	sort.Slice(servers, func(i, j int) bool {
+// 	// 		return servers[i].LastUpdated < servers[j].LastUpdated
+// 	// 	})
 
-	default:
-		log.Fatal("Error")
-	}
+// 	default:
+// 		log.Fatal("Error")
+// 	}
 
-	return servers
-}
+// 	return servers
+// }
 
 func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
