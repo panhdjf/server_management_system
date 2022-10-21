@@ -65,4 +65,29 @@ func main() {
 	ServerRouteController.ServerRoute(router)
 	log.Fatal(server.Run(":" + config.ServerPort))
 
+	// go func(ctx *gin.Context) {
+	// 	for {
+	// 		// Sleep 1 day
+	// 		// Get report from database
+	// 		// Send mail to admin (get from config)
+	// 		// Tim hieu
+	// 	}
+	// }()
+
+	// go func() {
+	// 	for {
+	// 		// Sleep
+	// 		// Get server list
+	// 		// Each server:
+	// 			// Call API of agent
+	// 				// if failed => server off
+	// 				// if successed => server on
+	// 			// Get up time from reponse
+	// 			// Update to database
+	// 	}
+	// }
+
+	// GET /status :8000
+	// Get server uptime
+	// Return
 }
