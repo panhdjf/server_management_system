@@ -84,17 +84,18 @@ func (sc *SeverController) FilterServers(ctx *gin.Context) {
 	intOffset, _ := strconv.Atoi(offset)
 	intLimit, _ := strconv.Atoi(limit)
 
+	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
 	var filterRequired = ctx.DefaultQuery("filterRequired", "online")
 	var servers []models.Server
 	//example: filter with status
 
-	result := sc.DB.Limit(intLimit).Offset(intOffset).Find(&servers, "status = ?", filterRequired)
+	result := sc.DB.Limit(intLimit).Offset(intOffset).Order(sortRequired).Find(&servers, "status = ?", filterRequired)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "filter": "status", "results": len(servers), "data": servers})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "filter": "status", "results": len(servers), "data": servers})
 }
 
 func (sc *SeverController) UpdateServer(ctx *gin.Context) {
@@ -130,15 +131,15 @@ func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 
 func (sc *SeverController) DeletePost(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
-
-	result := sc.DB.Delete(&models.Server{}, "id = ?", serverId)
+	var server models.Server
+	result := sc.DB.Delete(&server, "id = ?", serverId)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that Id exists"})
 		return
 	}
 
-	ctx.JSON(http.StatusNoContent, nil)
+	ctx.JSON(http.StatusOK, gin.H{"status": "deletedsuccess"})
 }
 
 func (sc *SeverController) DeleteAllServers(ctx *gin.Context) {
@@ -159,6 +160,13 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 	// index := f.NewSheet("Sheet1")
 
 	// Set value of a cell.
+
+	f.SetCellValue("Sheet1", "A1", "ID")
+	f.SetCellValue("Sheet1", "B1", "Name")
+	f.SetCellValue("Sheet1", "C1", "Status")
+	f.SetCellValue("Sheet1", "D1", "Ipv4")
+	f.SetCellValue("Sheet1", "E1", "CreatedTime")
+	f.SetCellValue("Sheet1", "F1", "LastUpdated")
 	var Servers []models.Server
 	//get servers from DB
 	sc.DB.Offset(0).Find(&Servers)
@@ -167,8 +175,9 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 		f.SetCellValue("Sheet1", "B"+strconv.Itoa(i+2), server.Name)
 		f.SetCellValue("Sheet1", "C"+strconv.Itoa(i+2), server.Status)
 		f.SetCellValue("Sheet1", "D"+strconv.Itoa(i+2), server.Ipv4)
-		f.SetCellValue("Sheet1", "E"+strconv.Itoa(i+2), server.CreatedTime)
-		f.SetCellValue("Sheet1", "F"+strconv.Itoa(i+2), server.LastUpdated)
+		f.SetCellValue("Sheet1", "E"+strconv.Itoa(i+2), server.User)
+		f.SetCellValue("Sheet1", "F"+strconv.Itoa(i+2), server.CreatedTime)
+		f.SetCellValue("Sheet1", "G"+strconv.Itoa(i+2), server.LastUpdated)
 		// Set active sheet of the workbook.
 	}
 	// f.SetActiveSheet(index)
@@ -181,6 +190,10 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 }
 
 func (sc *SeverController) ImportExcel(ctx *gin.Context) {
+	// currentUser := ctx.MustGet("currentUser").(models.User)
+	var servers []models.Server
+	sc.DB.Offset(1).Find(&servers)
+
 	f, err := excelize.OpenFile("Server.xlsx")
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to import Database to the excel", "error": err})
@@ -188,38 +201,40 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 	}
 
 	rows, err := f.GetRows("Sheet1")
-	ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err})
-	return
-	var servers []models.Server
-	sc.DB.Offset(0).Find(&servers)
+	if err != nil {
+		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	now := time.Now()
 	var serversAccept []models.Server
-	var serversFail []models.Server
+	var countFail int
 	for _, server := range servers {
 		for _, row := range rows {
 			if len(row) != 0 {
+				if server.ID == row[0] || server.Name == row[1] {
+					countFail += 1
+					continue
+				}
+				user, _ := strconv.Atoi(row[4])
 				newServer := models.Server{
 					ID:          row[0],
 					Name:        row[1],
 					Status:      row[2],
 					Ipv4:        row[3],
+					User:        user,
 					CreatedTime: now,
 					LastUpdated: now,
-				}
-				if server.ID == newServer.ID || server.Name == newServer.Name {
-					serversFail = append(serversFail, newServer)
-					continue
 				}
 				serversAccept = append(serversAccept, newServer)
 			}
 		}
 	}
-	results1 := sc.DB.Create(&serversAccept)
-	results2 := sc.DB.Create(&serversFail)
+	results := sc.DB.Create(&serversAccept)
 
-	if results1.Error != nil || results2.Error != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": results1.Error.Error()})
+	if results.Error != nil {
+		ctx.JSON(http.StatusOK, gin.H{"status": "error", "message": results.Error.Error()})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": len(serversFail), "data": serversFail}}})
+	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": countFail}}})
 }
