@@ -7,10 +7,10 @@ import (
 )
 
 type ServerRouteController struct {
-	serverController controllers.SeverController
+	serverController controllers.ServerController
 }
 
-func NewRouteServerController(serverController controllers.SeverController) ServerRouteController {
+func NewRouteServerController(serverController controllers.ServerController) ServerRouteController {
 	return ServerRouteController{serverController}
 }
 
@@ -22,7 +22,7 @@ func (sc ServerRouteController) ServerRoute(rg *gin.RouterGroup) {
 	router.GET("/view/sort/", sc.serverController.SortServers)
 	router.GET("/view/filterandsort", sc.serverController.FilterAndSortServers)
 	router.PUT("/:serverId", sc.serverController.UpdateServer)
-	router.DELETE("/:serverId", sc.serverController.DeletePost)
+	router.DELETE("/:serverId", sc.serverController.DeleteServer)
 	router.DELETE("/", sc.serverController.DeleteAllServers)
 	router.POST("/excel/import", sc.serverController.ImportExcel)
 	router.GET("/excel/export", sc.serverController.ExportExcel)

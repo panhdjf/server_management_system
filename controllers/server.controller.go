@@ -18,8 +18,8 @@ type ServerController struct {
 	DB *gorm.DB
 }
 
-func NewServerController(DB *gorm.DB) SeverController {
-	return SeverController{DB}
+func NewServerController(DB *gorm.DB) ServerController {
+	return ServerController{DB}
 }
 
 func (sc *ServerController) CreateServer(ctx *gin.Context) {
@@ -137,7 +137,7 @@ func (sc *ServerController) UpdateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": updatedServer})
 }
 
-func (sc *ServerController) DeletePost(ctx *gin.Context) {
+func (sc *ServerController) DeleteServer(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 	var server models.Server
 	result := sc.DB.Delete(&server, "id = ?", serverId)

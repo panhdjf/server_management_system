@@ -18,7 +18,7 @@ var (
 	UserController      controllers.UserController
 	UserRouteController routes.UserRouteController
 
-	ServerController      controllers.SeverController
+	ServerController      controllers.ServerController
 	ServerRouteController routes.ServerRouteController
 )
 
