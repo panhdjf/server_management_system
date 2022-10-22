@@ -20,7 +20,7 @@ func (sc ServerRouteController) ServerRoute(rg *gin.RouterGroup) {
 	router.Use(middleware.DeserializeUser())
 	router.POST("/", sc.serverController.CreateServer)
 	router.GET("/view/sort/", sc.serverController.SortServers)
-	router.GET("/view/filter", sc.serverController.FilterServers)
+	router.GET("/view/filterandsort", sc.serverController.FilterAndSortServers)
 	router.PUT("/:serverId", sc.serverController.UpdateServer)
 	router.DELETE("/:serverId", sc.serverController.DeletePost)
 	router.DELETE("/", sc.serverController.DeleteAllServers)
