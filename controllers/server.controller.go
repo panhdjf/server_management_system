@@ -137,7 +137,7 @@ func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": updatedServer})
 }
 
-func (sc *SeverController) DeletePost(ctx *gin.Context) {
+func (sc *SeverController) DeleteServer(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 	var server models.Server
 	result := sc.DB.Delete(&server, "id = ?", serverId)
