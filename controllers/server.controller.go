@@ -172,6 +172,7 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	f.SetCellValue("Sheet1", "B1", "Name")
 	f.SetCellValue("Sheet1", "C1", "Status")
 	f.SetCellValue("Sheet1", "D1", "Ipv4")
+	f.SetCellValue("Sheet1", "E1", "User")
 	f.SetCellValue("Sheet1", "E1", "CreatedTime")
 	f.SetCellValue("Sheet1", "F1", "LastUpdated")
 	var Servers []models.Server
@@ -193,7 +194,7 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	}
 	// f.SetActiveSheet(index)
 	// Save xlsx file by the given path.
-	if err := f.SaveAs("Server.xlsx"); err != nil {
+	if err := f.SaveAs("ExportServer.xlsx"); err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to export Database to the excel", "error": err})
 		return
 	}
@@ -204,7 +205,7 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	var servers []models.Server
 	sc.DB.Offset(0).Find(&servers)
 
-	f, err := excelize.OpenFile("Server.xlsx")
+	f, err := excelize.OpenFile("ImportServer.xlsx")
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to import Database to the excel", "error": err})
 		return
