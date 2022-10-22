@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type SeverController struct {
+type ServerController struct {
 	DB *gorm.DB
 }
 
@@ -22,7 +22,7 @@ func NewServerController(DB *gorm.DB) SeverController {
 	return SeverController{DB}
 }
 
-func (sc *SeverController) CreateServer(ctx *gin.Context) {
+func (sc *ServerController) CreateServer(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	var payload *models.CreateServerRequest
 
@@ -55,7 +55,7 @@ func (sc *SeverController) CreateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "data": newServer})
 }
 
-func (sc *SeverController) SortServers(ctx *gin.Context) {
+func (sc *ServerController) SortServers(ctx *gin.Context) {
 	var page = ctx.DefaultQuery("page", "0")
 	var limit = ctx.DefaultQuery("limit", "10")
 
@@ -80,7 +80,7 @@ func (sc *SeverController) SortServers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "results": len(servers), "data": servers})
 }
 
-func (sc *SeverController) FilterAndSortServers(ctx *gin.Context) {
+func (sc *ServerController) FilterAndSortServers(ctx *gin.Context) {
 	var page = ctx.DefaultQuery("page", "1")
 	var limit = ctx.DefaultQuery("limit", "10")
 
@@ -106,7 +106,7 @@ func (sc *SeverController) FilterAndSortServers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "results": len(servers), "filter": filterRequired, "value": valueRequired, "data": servers})
 }
 
-func (sc *SeverController) UpdateServer(ctx *gin.Context) {
+func (sc *ServerController) UpdateServer(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
@@ -137,7 +137,7 @@ func (sc *SeverController) UpdateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": updatedServer})
 }
 
-func (sc *SeverController) DeletePost(ctx *gin.Context) {
+func (sc *ServerController) DeletePost(ctx *gin.Context) {
 	serverId := ctx.Param("serverId")
 	var server models.Server
 	result := sc.DB.Delete(&server, "id = ?", serverId)
@@ -150,7 +150,7 @@ func (sc *SeverController) DeletePost(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "deletedsuccess"})
 }
 
-func (sc *SeverController) DeleteAllServers(ctx *gin.Context) {
+func (sc *ServerController) DeleteAllServers(ctx *gin.Context) {
 	var servers []models.Server
 	sc.DB.Offset(0).Find(&servers)
 
@@ -162,7 +162,7 @@ func (sc *SeverController) DeleteAllServers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"results": "All data have been deleted successfully"})
 }
 
-func (sc *SeverController) ExportExcel(ctx *gin.Context) {
+func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	f := excelize.NewFile()
 	// Create a new sheet.
 	// index := f.NewSheet("Sheet1")
@@ -178,7 +178,9 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 	//get servers from DB
 	//ex: sort with name
 	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
+
 	sc.DB.Offset(0).Order(sortRequired).Find(&Servers)
+
 	for i, server := range Servers {
 		f.SetCellValue("Sheet1", "A"+strconv.Itoa(i+2), server.ID)
 		f.SetCellValue("Sheet1", "B"+strconv.Itoa(i+2), server.Name)
@@ -198,7 +200,7 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success"})
 }
 
-func (sc *SeverController) ImportExcel(ctx *gin.Context) {
+func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	var servers []models.Server
 	sc.DB.Offset(0).Find(&servers)
 
@@ -267,6 +269,7 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 					LastUpdated: now,
 				}
 				serversImport = append(serversImport, newServer)
+
 				newServerAccept := models.ImportExcel{
 					ID:   row[0],
 					Name: row[1],
