@@ -22,7 +22,7 @@ func (sc ServerRouteController) ServerRoute(rg *gin.RouterGroup) {
 	router.GET("/view/sort/", sc.serverController.SortServers)
 	router.GET("/view/filterandsort", sc.serverController.FilterAndSortServers)
 	router.PUT("/:serverId", sc.serverController.UpdateServer)
-	router.DELETE("/:serverId", sc.serverController.DeletePost)
+	router.DELETE("/:serverId", sc.serverController.DeleteSerser)
 	router.DELETE("/", sc.serverController.DeleteAllServers)
 	router.POST("/excel/import", sc.serverController.ImportExcel)
 	router.GET("/excel/export", sc.serverController.ExportExcel)
