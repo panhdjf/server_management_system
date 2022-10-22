@@ -33,3 +33,8 @@ type UpdateServer struct {
 	CreatedTime time.Time `json:"created_time,omitempty"`
 	LastUpdated time.Time `json:"last_updated,omitempty"`
 }
+
+type ImportExcel struct {
+	ID   string ` json:"server_id,omitempty"`
+	Name string `json:"server_name,omitempty"`
+}

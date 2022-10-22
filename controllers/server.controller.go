@@ -56,20 +56,22 @@ func (sc *SeverController) CreateServer(ctx *gin.Context) {
 }
 
 func (sc *SeverController) SortServers(ctx *gin.Context) {
-	var offset = ctx.DefaultQuery("offset", "0")
+	var page = ctx.DefaultQuery("page", "0")
 	var limit = ctx.DefaultQuery("limit", "10")
 
-	intOffset, _ := strconv.Atoi(offset)
+	intPage, _ := strconv.Atoi(page)
 	intLimit, _ := strconv.Atoi(limit)
+
+	offset := (intPage - 1) * intLimit
 
 	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
 	var servers []models.Server
 
 	// offset: bo qua offset servers dau
 	//limit: lay limit servers
-	//order: sap sap theo Vd: tang dan: "name", giam dan: "name decs"
+	//order: sap sap theo Vd: tang dan: order("name"), giam dan: order("name decs")
 
-	result := sc.DB.Limit(intLimit).Offset(intOffset).Order(sortRequired).Find(&servers)
+	result := sc.DB.Limit(intLimit).Offset(offset).Order(sortRequired).Find(&servers)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
@@ -79,11 +81,13 @@ func (sc *SeverController) SortServers(ctx *gin.Context) {
 }
 
 func (sc *SeverController) FilterAndSortServers(ctx *gin.Context) {
-	var offset = ctx.DefaultQuery("offset", "0")
+	var page = ctx.DefaultQuery("page", "1")
 	var limit = ctx.DefaultQuery("limit", "10")
 
-	intOffset, _ := strconv.Atoi(offset)
+	intPage, _ := strconv.Atoi(page)
 	intLimit, _ := strconv.Atoi(limit)
+
+	offset := (intPage - 1) * intLimit
 
 	var filterRequired = ctx.DefaultQuery("filterRequired", "status")
 	var valueRequired = ctx.DefaultQuery("valueRequired", "online")
@@ -93,7 +97,7 @@ func (sc *SeverController) FilterAndSortServers(ctx *gin.Context) {
 	var servers []models.Server
 
 	//Ex: Filter with status = online
-	result := sc.DB.Order(sortRequired).Limit(intLimit).Offset(intOffset).Where(filterRequired, valueRequired).Find(&servers)
+	result := sc.DB.Order(sortRequired).Limit(intLimit).Offset(offset).Where(filterRequired, valueRequired).Find(&servers)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
@@ -162,7 +166,6 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 	f := excelize.NewFile()
 	// Create a new sheet.
 	// index := f.NewSheet("Sheet1")
-
 	// Set value of a cell.
 
 	f.SetCellValue("Sheet1", "A1", "ID")
@@ -173,7 +176,9 @@ func (sc *SeverController) ExportExcel(ctx *gin.Context) {
 	f.SetCellValue("Sheet1", "F1", "LastUpdated")
 	var Servers []models.Server
 	//get servers from DB
-	sc.DB.Offset(0).Find(&Servers)
+	//ex: sort with name
+	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
+	sc.DB.Offset(0).Order(sortRequired).Find(&Servers)
 	for i, server := range Servers {
 		f.SetCellValue("Sheet1", "A"+strconv.Itoa(i+2), server.ID)
 		f.SetCellValue("Sheet1", "B"+strconv.Itoa(i+2), server.Name)
@@ -210,14 +215,22 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 	}
 
 	now := time.Now()
-	serversAccept := make([]models.Server, 0)
-	var countFail int
+
+	serversImport := make([]models.Server, 0)
+
+	serversAccept := make([]models.ImportExcel, 0)
+	serversFail := make([]models.ImportExcel, 0)
+
 	if len(servers) != 0 {
 		for _, server := range servers {
 			for _, row := range rows {
 				if len(row) != 0 {
 					if server.ID == row[0] || server.Name == row[1] {
-						countFail += 1
+						newServerFail := models.ImportExcel{
+							ID:   row[0],
+							Name: row[1],
+						}
+						serversFail = append(serversFail, newServerFail)
 						continue
 					}
 					user, _ := strconv.Atoi(row[4])
@@ -230,7 +243,13 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 						CreatedTime: now,
 						LastUpdated: now,
 					}
-					serversAccept = append(serversAccept, newServer)
+					serversImport = append(serversImport, newServer)
+
+					newServerAccept := models.ImportExcel{
+						ID:   row[0],
+						Name: row[1],
+					}
+					serversAccept = append(serversAccept, newServerAccept)
 				}
 			}
 		}
@@ -247,15 +266,20 @@ func (sc *SeverController) ImportExcel(ctx *gin.Context) {
 					CreatedTime: now,
 					LastUpdated: now,
 				}
-				serversAccept = append(serversAccept, newServer)
+				serversImport = append(serversImport, newServer)
+				newServerAccept := models.ImportExcel{
+					ID:   row[0],
+					Name: row[1],
+				}
+				serversAccept = append(serversAccept, newServerAccept)
 			}
 		}
 	}
-	results := sc.DB.Create(&serversAccept)
+	results := sc.DB.Create(&serversImport)
 
 	if results.Error != nil {
 		ctx.JSON(http.StatusOK, gin.H{"status": "fail", "message": results.Error.Error()})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": countFail}}})
+	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": len(serversFail), "data": serversFail}}})
 }
