@@ -20,6 +20,9 @@ var (
 
 	ServerController      controllers.ServerController
 	ServerRouteController routes.ServerRouteController
+
+	MailController controllers.MailController
+	// MailRouteController routes.MailRouteController
 )
 
 func init() {
@@ -38,6 +41,10 @@ func init() {
 
 	ServerController = controllers.NewServerController(initializers.DB)
 	ServerRouteController = routes.NewRouteServerController(ServerController)
+
+	MailController = controllers.NewMailController(initializers.DB)
+	// MailRouteController = routes.NewRouteMailController(MailController)
+
 	server = gin.Default()
 }
 
@@ -51,6 +58,10 @@ func main() {
 	corsConfig.AllowOrigins = []string{"http://localhost:8000", config.ClientOrigin}
 	corsConfig.AllowCredentials = true
 
+	go func() {
+		MailController.Cron()
+	}()
+
 	server.Use(cors.New(corsConfig))
 
 	router := server.Group("/api")
@@ -58,16 +69,8 @@ func main() {
 	AuthRouteController.AuthRoute(router)
 	UserRouteController.UserRoute(router)
 	ServerRouteController.ServerRoute(router)
+	// MailRouteController.MailRoute(router)
 	log.Fatal(server.Run(":" + config.ServerPort))
-
-	// go func(ctx *gin.Context) {
-	// 	for {
-	// 		// Sleep 1 day
-	// 		// Get report from database
-	// 		// Send mail to admin (get from config)
-	// 		// Tim hieu
-	// 	}
-	// }()
 
 	// go func() {
 	// 	for {

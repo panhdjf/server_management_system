@@ -24,6 +24,12 @@ type Config struct {
 	RefreshTokenExpiresIn  time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
 	AccessTokenMaxAge      int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
 	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
+
+	EmailHost         string `mapstructure:"EMAIL_HOST"`
+	EmailHostUser     string `mapstructure:"EMAIL_HOST_USER"`
+	EmailHostPassword string `mapstructure:"EMAIL_HOST_PASSWORD"`
+	EmailPort         string `mapstructure:"EMAIL_PORT"`
+	EmailUseTls       string `mapstructure:"EMAIL_USE_TLS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

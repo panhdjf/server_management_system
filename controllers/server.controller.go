@@ -173,8 +173,8 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	f.SetCellValue("Sheet1", "C1", "Status")
 	f.SetCellValue("Sheet1", "D1", "Ipv4")
 	f.SetCellValue("Sheet1", "E1", "User")
-	f.SetCellValue("Sheet1", "E1", "CreatedTime")
-	f.SetCellValue("Sheet1", "F1", "LastUpdated")
+	f.SetCellValue("Sheet1", "F1", "CreatedTime")
+	f.SetCellValue("Sheet1", "G1", "LastUpdated")
 	var Servers []models.Server
 	//get servers from DB
 	//ex: sort with name
