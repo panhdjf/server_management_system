@@ -20,17 +20,19 @@ func (sc ServerController) Periodically() {
 func (sc ServerController) SendEmail() {
 	mail := viper.GetString("EMAIL_HOST_USER")
 	passmail := viper.GetString("EMAIL_HOST_PASSWORD")
+	host := viper.GetString("EMAIL_HOST")
+	emailPort := viper.GetInt("EMAIL_PORT")
 
 	totalServer, countOn, countOff := sc.CheckStatus()
 	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d ", totalServer, countOn, countOff)
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", "anhntpvcs@gmail.com")
+	m.SetHeader("From", mail)
 	m.SetHeader("To", "anhntpvcs@gmail.com")
 
 	m.SetBody("text/plain", msg)
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, mail, passmail)
+	d := gomail.NewDialer(host, emailPort, mail, passmail)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	if err := d.DialAndSend(m); err != nil {
