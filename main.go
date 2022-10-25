@@ -53,7 +53,7 @@ func main() {
 	corsConfig.AllowCredentials = true
 
 	go func() {
-		ServerController.Cron()
+		ServerController.Periodically()
 	}()
 
 	server.Use(cors.New(corsConfig))

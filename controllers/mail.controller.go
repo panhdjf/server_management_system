@@ -11,7 +11,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func (sc ServerController) Cron() {
+func (sc ServerController) Periodically() {
 	timeat := viper.GetString("SEND_MAIL_TIME")
 	gocron.Every(1).Day().At(timeat).Do(sc.SendEmail)
 	<-gocron.Start()
@@ -36,7 +36,7 @@ func (sc ServerController) SendEmail() {
 	if err := d.DialAndSend(m); err != nil {
 		// ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
 		// return
-		log.Fatal("Error", err)
+		log.Fatal("Failed to Send Mail periodically ", err)
 	}
 	// ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 	fmt.Println("Completed to Send Mail periodically")
