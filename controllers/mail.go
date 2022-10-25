@@ -23,9 +23,8 @@ func NewMailController(DB *gorm.DB) MailController {
 
 func (mc MailController) Cron() {
 
-	gocron.Every(1).Day().At("18:04:00").Do(mc.SendEmail, &mc)
+	gocron.Every(1).Day().At("09:05:00").Do(mc.SendEmail)
 	<-gocron.Start()
-	fmt.Println("fgjg")
 }
 
 func (mc MailController) SendEmail() {
