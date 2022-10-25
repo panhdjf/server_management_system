@@ -28,10 +28,7 @@ func (mc MailController) Cron() {
 }
 
 func (mc MailController) SendEmail() {
-	// initializers.LoadConfig("app.env")
 	mail := viper.GetString("EMAIL_HOST_USER")
-
-	// mail := os.Getenv("EMAIL_HOST_USER")
 	passmail := viper.GetString("EMAIL_HOST_PASSWORD")
 
 	var servers []models.Server
@@ -59,7 +56,6 @@ func (mc MailController) SendEmail() {
 	d := gomail.NewDialer("smtp.gmail.com", 587, mail, passmail)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
-	// time.Sleep(time.Second * 10)
 	if err := d.DialAndSend(m); err != nil {
 		// ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
 		// return
