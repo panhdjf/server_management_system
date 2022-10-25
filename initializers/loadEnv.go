@@ -30,6 +30,8 @@ type Config struct {
 	EmailHostPassword string `mapstructure:"EMAIL_HOST_PASSWORD"`
 	EmailPort         string `mapstructure:"EMAIL_PORT"`
 	EmailUseTls       string `mapstructure:"EMAIL_USE_TLS"`
+
+	SendMailTime string `mapstructure:"SEND_MAIL_TIME"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

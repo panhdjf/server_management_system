@@ -22,8 +22,8 @@ func NewMailController(DB *gorm.DB) MailController {
 }
 
 func (mc MailController) Cron() {
-
-	gocron.Every(1).Day().At("09:05:00").Do(mc.SendEmail)
+	timeat := viper.GetString("SEND_MAIL_TIME")
+	gocron.Every(1).Day().At(timeat).Do(mc.SendEmail)
 	<-gocron.Start()
 }
 
