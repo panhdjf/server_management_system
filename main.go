@@ -20,8 +20,6 @@ var (
 
 	ServerController      controllers.ServerController
 	ServerRouteController routes.ServerRouteController
-
-	MailController controllers.MailController
 )
 
 func init() {
@@ -41,8 +39,6 @@ func init() {
 	ServerController = controllers.NewServerController(initializers.DB)
 	ServerRouteController = routes.NewRouteServerController(ServerController)
 
-	MailController = controllers.NewMailController(initializers.DB)
-
 	server = gin.Default()
 }
 
@@ -57,7 +53,7 @@ func main() {
 	corsConfig.AllowCredentials = true
 
 	go func() {
-		MailController.Cron()
+		ServerController.Cron()
 	}()
 
 	server.Use(cors.New(corsConfig))

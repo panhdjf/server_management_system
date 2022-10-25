@@ -6,46 +6,23 @@ import (
 	"log"
 
 	"github.com/jasonlvhit/gocron"
-	"github.com/panhdjf/server_management_system/models"
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
 
 	"gopkg.in/gomail.v2"
 )
 
-type MailController struct {
-	DB *gorm.DB
-}
-
-func NewMailController(DB *gorm.DB) MailController {
-	return MailController{DB}
-}
-
-func (mc MailController) Cron() {
+func (sc ServerController) Cron() {
 	timeat := viper.GetString("SEND_MAIL_TIME")
-	gocron.Every(1).Day().At(timeat).Do(mc.SendEmail)
+	gocron.Every(1).Day().At(timeat).Do(sc.SendEmail)
 	<-gocron.Start()
 }
 
-func (mc MailController) SendEmail() {
+func (sc ServerController) SendEmail() {
 	mail := viper.GetString("EMAIL_HOST_USER")
 	passmail := viper.GetString("EMAIL_HOST_PASSWORD")
 
-	var servers []models.Server
-	mc.DB.Find(&servers)
-
-	countServerOn := 0
-	countServerOff := 0
-
-	for _, server := range servers {
-		if server.Status == "online" {
-			countServerOn++
-		} else {
-			countServerOff++
-		}
-	}
-
-	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d ", len(servers), countServerOn, countServerOff)
+	totalServer, countOn, countOff := sc.CheckStatus()
+	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d ", totalServer, countOn, countOff)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", "anhntpvcs@gmail.com")
@@ -62,5 +39,5 @@ func (mc MailController) SendEmail() {
 		log.Fatal("Error", err)
 	}
 	// ctx.JSON(http.StatusOK, gin.H{"status": "success"})
-	fmt.Println("Send Mail ok")
+	fmt.Println("Completed to Send Mail periodically")
 }

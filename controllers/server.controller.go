@@ -287,3 +287,20 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": len(serversFail), "data": serversFail}}})
 }
+
+func (sc ServerController) CheckStatus() (totalServer int, countOn int, countOff int) {
+	var servers []models.Server
+	sc.DB.Find(&servers)
+
+	countServerOn := 0
+	countServerOff := 0
+
+	for _, server := range servers {
+		if server.Status == "online" {
+			countServerOn++
+		} else {
+			countServerOff++
+		}
+	}
+	return len(servers), countOn, countOff
+}
