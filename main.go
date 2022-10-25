@@ -22,7 +22,6 @@ var (
 	ServerRouteController routes.ServerRouteController
 
 	MailController controllers.MailController
-	// MailRouteController routes.MailRouteController
 )
 
 func init() {
@@ -43,7 +42,6 @@ func init() {
 	ServerRouteController = routes.NewRouteServerController(ServerController)
 
 	MailController = controllers.NewMailController(initializers.DB)
-	// MailRouteController = routes.NewRouteMailController(MailController)
 
 	server = gin.Default()
 }
@@ -69,7 +67,6 @@ func main() {
 	AuthRouteController.AuthRoute(router)
 	UserRouteController.UserRoute(router)
 	ServerRouteController.ServerRoute(router)
-	// MailRouteController.MailRoute(router)
 	log.Fatal(server.Run(":" + config.ServerPort))
 
 	// go func() {
