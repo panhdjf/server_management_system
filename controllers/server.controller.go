@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -35,13 +33,14 @@ func (sc *ServerController) CreateServer(ctx *gin.Context) {
 
 	now := time.Now()
 	newServer := models.Server{
-		ID:          xid.New().String(),
-		Name:        payload.Name,
-		Status:      payload.Status,
-		Ipv4:        payload.Ipv4,
-		User:        currentUser.ID,
-		CreatedTime: now,
-		LastUpdated: now,
+		ID:            xid.New().String(),
+		Name:          payload.Name,
+		Status:        payload.Status,
+		Uptime:        payload.Uptime,
+		Ipv4:          payload.Ipv4,
+		IdUserManager: currentUser.ID,
+		CreatedTime:   now,
+		LastUpdated:   now,
 	}
 
 	result := sc.DB.Create(&newServer)
@@ -57,55 +56,37 @@ func (sc *ServerController) CreateServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "data": newServer})
 }
 
-func (sc *ServerController) SortServers(ctx *gin.Context) {
+func (sc *ServerController) ViewServers(ctx *gin.Context) {
 	var page = ctx.DefaultQuery("page", "0")
 	var limit = ctx.DefaultQuery("limit", "10")
 
 	intPage, _ := strconv.Atoi(page)
 	intLimit, _ := strconv.Atoi(limit)
-
 	offset := (intPage - 1) * intLimit
 
 	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
+	filterRequired := ctx.DefaultQuery("filterRequired", "")
+	var valueRequired = ctx.DefaultQuery("valueRequired", "")
+
 	var servers []models.Server
 
-	// offset: bo qua offset servers dau
-	//limit: lay limit servers
-	//order: sap sap theo Vd: tang dan: order("name"), giam dan: order("name decs")
-
-	result := sc.DB.Limit(intLimit).Offset(offset).Order(sortRequired).Find(&servers)
-
-	if result.Error != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
+	if filterRequired == "" || valueRequired == "" {
+		result := sc.DB.Limit(intLimit).Offset(offset).Order(sortRequired).Find(&servers)
+		if result.Error != nil {
+			ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "filter": "No filter", "results": len(servers), "data": servers})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "results": len(servers), "data": servers})
-}
 
-func (sc *ServerController) FilterAndSortServers(ctx *gin.Context) {
-	var page = ctx.DefaultQuery("page", "1")
-	var limit = ctx.DefaultQuery("limit", "10")
-
-	intPage, _ := strconv.Atoi(page)
-	intLimit, _ := strconv.Atoi(limit)
-
-	offset := (intPage - 1) * intLimit
-
-	var filterRequired = ctx.DefaultQuery("filterRequired", "status")
-	var valueRequired = ctx.DefaultQuery("valueRequired", "online")
-
-	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
-
-	var servers []models.Server
-
-	//Ex: Filter with status = online
 	result := sc.DB.Order(sortRequired).Limit(intLimit).Offset(offset).Where(filterRequired, valueRequired).Find(&servers)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": "No Server with that required exists"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "results": len(servers), "filter": filterRequired, "value": valueRequired, "data": servers})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "sort": sortRequired, "filter": filterRequired, "required filter": valueRequired, "results": len(servers), "data": servers})
 }
 
 func (sc *ServerController) UpdateServer(ctx *gin.Context) {
@@ -125,13 +106,14 @@ func (sc *ServerController) UpdateServer(ctx *gin.Context) {
 	}
 	now := time.Now()
 	serverToUpdate := models.Server{
-		ID:          updatedServer.ID,
-		Name:        payload.Name,
-		Status:      payload.Status,
-		Ipv4:        payload.Ipv4,
-		User:        currentUser.ID,
-		CreatedTime: updatedServer.CreatedTime,
-		LastUpdated: now,
+		ID:            updatedServer.ID,
+		Name:          payload.Name,
+		Status:        payload.Status,
+		Uptime:        payload.Uptime,
+		Ipv4:          payload.Ipv4,
+		IdUserManager: currentUser.ID,
+		CreatedTime:   updatedServer.CreatedTime,
+		LastUpdated:   now,
 	}
 
 	sc.DB.Model(&updatedServer).Updates(serverToUpdate)
@@ -173,10 +155,11 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	f.SetCellValue("Sheet1", "A1", "ID")
 	f.SetCellValue("Sheet1", "B1", "Name")
 	f.SetCellValue("Sheet1", "C1", "Status")
-	f.SetCellValue("Sheet1", "D1", "Ipv4")
-	f.SetCellValue("Sheet1", "E1", "User")
-	f.SetCellValue("Sheet1", "F1", "CreatedTime")
-	f.SetCellValue("Sheet1", "G1", "LastUpdated")
+	f.SetCellValue("Sheet1", "D1", "Uptime")
+	f.SetCellValue("Sheet1", "E1", "Ipv4")
+	f.SetCellValue("Sheet1", "F1", "IdUserManager")
+	f.SetCellValue("Sheet1", "G1", "CreatedTime")
+	f.SetCellValue("Sheet1", "H1", "LastUpdated")
 	var Servers []models.Server
 	//get servers from DB
 	//ex: sort with name
@@ -188,26 +171,30 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 		f.SetCellValue("Sheet1", "A"+strconv.Itoa(i+2), server.ID)
 		f.SetCellValue("Sheet1", "B"+strconv.Itoa(i+2), server.Name)
 		f.SetCellValue("Sheet1", "C"+strconv.Itoa(i+2), server.Status)
-		f.SetCellValue("Sheet1", "D"+strconv.Itoa(i+2), server.Ipv4)
-		f.SetCellValue("Sheet1", "E"+strconv.Itoa(i+2), server.User)
-		f.SetCellValue("Sheet1", "F"+strconv.Itoa(i+2), server.CreatedTime)
-		f.SetCellValue("Sheet1", "G"+strconv.Itoa(i+2), server.LastUpdated)
+		f.SetCellValue("Sheet1", "D"+strconv.Itoa(i+2), server.Uptime)
+		f.SetCellValue("Sheet1", "E"+strconv.Itoa(i+2), server.Ipv4)
+		f.SetCellValue("Sheet1", "F"+strconv.Itoa(i+2), server.IdUserManager)
+		f.SetCellValue("Sheet1", "G"+strconv.Itoa(i+2), server.CreatedTime)
+		f.SetCellValue("Sheet1", "H"+strconv.Itoa(i+2), server.LastUpdated)
 		// Set active sheet of the workbook.
 	}
 	// f.SetActiveSheet(index)
 	// Save xlsx file by the given path.
 	if err := f.SaveAs("ExportServer.xlsx"); err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to export Database to the excel", "error": err})
+		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to export Database to the excel", "error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success"})
 }
 
 func (sc *ServerController) ImportExcel(ctx *gin.Context) {
-	var servers []models.Server
-	sc.DB.Find(&servers)
+	file, err := ctx.FormFile("ImportServer.xlsx")
+	if err != nil {
+		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to import Database to the excel", "error": err.Error()})
+		return
+	}
 
-	f, err := excelize.OpenFile("ImportServer.xlsx")
+	f, err := excelize.OpenFile(file.Filename)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": "Failed to import Database to the excel", "error": err})
 		return
@@ -220,6 +207,8 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	}
 
 	now := time.Now()
+	var servers []models.Server
+	sc.DB.Find(&servers)
 
 	serversImport := make([]models.Server, 0)
 
@@ -239,14 +228,16 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 						continue
 					}
 					user, _ := strconv.Atoi(row[4])
+					uptime, _ := strconv.ParseFloat(row[3], 8)
 					newServer := models.Server{
-						ID:          row[0],
-						Name:        row[1],
-						Status:      row[2],
-						Ipv4:        row[3],
-						User:        user,
-						CreatedTime: now,
-						LastUpdated: now,
+						ID:            row[0],
+						Name:          row[1],
+						Status:        row[2],
+						Uptime:        uptime,
+						Ipv4:          row[4],
+						IdUserManager: user,
+						CreatedTime:   now,
+						LastUpdated:   now,
 					}
 					serversImport = append(serversImport, newServer)
 
@@ -262,14 +253,16 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 		for _, row := range rows {
 			if len(row) != 0 {
 				user, _ := strconv.Atoi(row[4])
+				uptime, _ := strconv.ParseFloat(row[3], 8)
 				newServer := models.Server{
-					ID:          row[0],
-					Name:        row[1],
-					Status:      row[2],
-					Ipv4:        row[3],
-					User:        user,
-					CreatedTime: now,
-					LastUpdated: now,
+					ID:            row[0],
+					Name:          row[1],
+					Status:        row[2],
+					Uptime:        uptime,
+					Ipv4:          row[4],
+					IdUserManager: user,
+					CreatedTime:   now,
+					LastUpdated:   now,
 				}
 				serversImport = append(serversImport, newServer)
 
@@ -298,36 +291,19 @@ func (sc ServerController) CheckStatusServer() (int, int, int, float64) {
 	if totalServer == 0 {
 		log.Fatal("No server exists")
 	}
-
 	countServerOn := 0
 	countServerOff := 0
 	totalUptime := 0.0
 	for _, server := range servers {
-		url := strings.Join([]string{"http://", server.ID, ":8000/status"}, "")
-		response, err := http.Get(url)
-		// response, err := http.Get("http://192.168.2.0:8000/status")
-		if err != nil {
-			// fmt.Print(err.Error())
-			// os.Exit(1)
+		totalUptime += server.Uptime
+		if server.Status == "offline" {
 			countServerOff++
 			continue
 		}
 		countServerOn++
-		responseData, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		var responseServer models.ServerStatus
-		err1 := json.Unmarshal(responseData, responseServer)
-		if err1 != nil {
-			log.Fatal(err1)
-		}
-		IntUptime, _ := strconv.ParseFloat(responseServer.UpdateTime, 8)
-		totalUptime += IntUptime
 	}
 
 	var avgUptime float64
 	avgUptime = totalUptime / float64(totalServer)
-
 	return totalServer, countServerOn, countServerOff, avgUptime
 }

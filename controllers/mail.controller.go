@@ -4,14 +4,16 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jasonlvhit/gocron"
 	"github.com/spf13/viper"
 
 	"gopkg.in/gomail.v2"
 )
 
-func (sc ServerController) Periodically() {
+func (sc ServerController) DailyReport() {
 	timeat := viper.GetString("SEND_MAIL_TIME")
 	gocron.Every(1).Day().At(timeat).Do(sc.SendEmail)
 	<-gocron.Start()
@@ -24,7 +26,7 @@ func (sc ServerController) SendEmail() {
 	emailPort := viper.GetInt("EMAIL_PORT")
 
 	totalServer, countOn, countOff, avgUptime := sc.CheckStatusServer()
-	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d \nAverage Uptime of Servers: %f", totalServer, countOn, countOff, avgUptime)
+	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d \nAverage Uptime of Servers: %fs", totalServer, countOn, countOff, avgUptime)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", mail)
@@ -36,10 +38,33 @@ func (sc ServerController) SendEmail() {
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	if err := d.DialAndSend(m); err != nil {
-		// ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
-		// return
 		log.Fatal("Failed to Send Mail periodically ", err)
 	}
-	// ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 	fmt.Println("Completed to Send Mail periodically")
+}
+
+func (sc ServerController) DailyReportManually(ctx *gin.Context) {
+	mail := viper.GetString("EMAIL_HOST_USER")
+	passmail := viper.GetString("EMAIL_HOST_PASSWORD")
+	host := viper.GetString("EMAIL_HOST")
+	emailPort := viper.GetInt("EMAIL_PORT")
+
+	totalServer, countOn, countOff, avgUptime := sc.CheckStatusServer()
+	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d \nAverage Uptime of Servers: %fs", totalServer, countOn, countOff, avgUptime)
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", mail)
+	m.SetHeader("To", "anhntpvcs@gmail.com")
+
+	m.SetBody("text/plain", msg)
+
+	d := gomail.NewDialer(host, emailPort, mail, passmail)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	if err := d.DialAndSend(m); err != nil {
+		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+
 }

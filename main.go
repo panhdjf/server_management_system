@@ -53,7 +53,7 @@ func main() {
 	corsConfig.AllowCredentials = true
 
 	go func() {
-		ServerController.Periodically()
+		ServerController.DailyReport()
 	}()
 
 	server.Use(cors.New(corsConfig))
@@ -63,6 +63,7 @@ func main() {
 	AuthRouteController.AuthRoute(router)
 	UserRouteController.UserRoute(router)
 	ServerRouteController.ServerRoute(router)
+	ServerRouteController.DailyReportManuallyRoute(router)
 	log.Fatal(server.Run(":" + config.ServerPort))
 
 	// go func() {
