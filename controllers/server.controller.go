@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,7 +13,6 @@ import (
 	"github.com/panhdjf/server_management_system/models"
 	"github.com/rs/xid"
 	"github.com/xuri/excelize/v2"
-
 	"gorm.io/gorm"
 )
 
@@ -152,7 +154,7 @@ func (sc *ServerController) DeleteServer(ctx *gin.Context) {
 
 func (sc *ServerController) DeleteAllServers(ctx *gin.Context) {
 	var servers []models.Server
-	sc.DB.Offset(0).Find(&servers)
+	sc.DB.Find(&servers)
 
 	results := sc.DB.Delete(&servers)
 	if results.Error != nil {
@@ -180,7 +182,7 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 	//ex: sort with name
 	var sortRequired = ctx.DefaultQuery("sortRequired", "name")
 
-	sc.DB.Offset(0).Order(sortRequired).Find(&Servers)
+	sc.DB.Order(sortRequired).Find(&Servers)
 
 	for i, server := range Servers {
 		f.SetCellValue("Sheet1", "A"+strconv.Itoa(i+2), server.ID)
@@ -203,7 +205,7 @@ func (sc *ServerController) ExportExcel(ctx *gin.Context) {
 
 func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	var servers []models.Server
-	sc.DB.Offset(0).Find(&servers)
+	sc.DB.Find(&servers)
 
 	f, err := excelize.OpenFile("ImportServer.xlsx")
 	if err != nil {
@@ -288,19 +290,44 @@ func (sc *ServerController) ImportExcel(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"status": gin.H{"ImportEccept": gin.H{"CountAccept": len(serversAccept), "data": serversAccept}, "ImportFail": gin.H{"CountFail": len(serversFail), "data": serversFail}}})
 }
 
-func (sc ServerController) CheckStatus() (totalServer int, countOn int, countOff int) {
+func (sc ServerController) CheckStatusServer() (int, int, int, float64) {
+
 	var servers []models.Server
 	sc.DB.Find(&servers)
+	totalServer := len(servers)
+	if totalServer == 0 {
+		log.Fatal("No server exists")
+	}
 
 	countServerOn := 0
 	countServerOff := 0
-
+	totalUptime := 0.0
 	for _, server := range servers {
-		if server.Status == "online" {
-			countServerOn++
-		} else {
+		url := strings.Join([]string{"http://", server.ID, ":8000/status"}, "")
+		response, err := http.Get(url)
+		// response, err := http.Get("http://192.168.2.0:8000/status")
+		if err != nil {
+			// fmt.Print(err.Error())
+			// os.Exit(1)
 			countServerOff++
+			continue
 		}
+		countServerOn++
+		responseData, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var responseServer models.ServerStatus
+		err1 := json.Unmarshal(responseData, responseServer)
+		if err1 != nil {
+			log.Fatal(err1)
+		}
+		IntUptime, _ := strconv.ParseFloat(responseServer.UpdateTime, 8)
+		totalUptime += IntUptime
 	}
-	return len(servers), countOn, countOff
+
+	var avgUptime float64
+	avgUptime = totalUptime / float64(totalServer)
+
+	return totalServer, countServerOn, countServerOff, avgUptime
 }

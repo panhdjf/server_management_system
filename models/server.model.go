@@ -38,3 +38,8 @@ type ImportExcel struct {
 	ID   string ` json:"server_id,omitempty"`
 	Name string `json:"server_name,omitempty"`
 }
+
+type ServerStatus struct {
+	UpdateTime string `json:"uptime"`
+	Status     string `json:"status"`
+}

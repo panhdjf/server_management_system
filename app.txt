@@ -20,7 +20,7 @@ REFRESH_TOKEN_MAXAGE=60
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'anhntpvcs@gmail.com'
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_PASSWORD = 'rtabnejmxydsrbtj'
 EMAIL_PORT = 587
 EMAIL_USE_TSL = True
 

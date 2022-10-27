@@ -23,8 +23,8 @@ func (sc ServerController) SendEmail() {
 	host := viper.GetString("EMAIL_HOST")
 	emailPort := viper.GetInt("EMAIL_PORT")
 
-	totalServer, countOn, countOff := sc.CheckStatus()
-	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d ", totalServer, countOn, countOff)
+	totalServer, countOn, countOff, avgUptime := sc.CheckStatusServer()
+	msg := fmt.Sprintf("Total number of server : %d \nSERVERS ON : %d \nSERVERS OFF : %d \nAverage Uptime of Servers: %f", totalServer, countOn, countOff, avgUptime)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", mail)
