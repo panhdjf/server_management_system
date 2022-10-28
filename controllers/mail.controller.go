@@ -31,7 +31,7 @@ func (sc ServerController) SendEmail() {
 	m := gomail.NewMessage()
 	m.SetHeader("From", mail)
 	m.SetHeader("To", "anhntpvcs@gmail.com")
-
+	m.SetHeader("Subject", "Mail Daily Report Automatically")
 	m.SetBody("text/plain", msg)
 
 	d := gomail.NewDialer(host, emailPort, mail, passmail)
@@ -43,7 +43,7 @@ func (sc ServerController) SendEmail() {
 	fmt.Println("Completed to Send Mail periodically")
 }
 
-func (sc ServerController) DailyReportManually(ctx *gin.Context) {
+func (sc ServerController) ReportManually(ctx *gin.Context) {
 	mail := viper.GetString("EMAIL_HOST_USER")
 	passmail := viper.GetString("EMAIL_HOST_PASSWORD")
 	host := viper.GetString("EMAIL_HOST")
@@ -55,7 +55,7 @@ func (sc ServerController) DailyReportManually(ctx *gin.Context) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", mail)
 	m.SetHeader("To", "anhntpvcs@gmail.com")
-
+	m.SetHeader("Subject", "Mail Report Manually")
 	m.SetBody("text/plain", msg)
 
 	d := gomail.NewDialer(host, emailPort, mail, passmail)

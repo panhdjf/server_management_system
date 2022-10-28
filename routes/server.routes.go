@@ -21,6 +21,7 @@ func (sc ServerRouteController) ServerRoute(rg *gin.RouterGroup) {
 	router.POST("/", sc.serverController.CreateServer)
 	router.GET("/view", sc.serverController.ViewServers)
 	router.PUT("/:serverId", sc.serverController.UpdateServer)
+	router.PUT("/", sc.serverController.UpdateStatusServer)
 	router.DELETE("/:serverId", sc.serverController.DeleteServer)
 	router.DELETE("/", sc.serverController.DeleteAllServers)
 	router.POST("/excel/import", sc.serverController.ImportExcel)

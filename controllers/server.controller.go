@@ -309,30 +309,33 @@ func (sc ServerController) CheckStatusServer() (int, int, int, float64) {
 		}
 		countServerOn++
 	}
-
 	var avgUptime float64
 	avgUptime = totalUptime / float64(totalServer)
 	return totalServer, countServerOn, countServerOff, avgUptime
 }
 
 func (sc ServerController) UpdateStatusServer(ctx *gin.Context) {
-	var servers []models.Server
-	sc.DB.Find(&servers)
-	totalServer := len(servers)
-	if totalServer == 0 {
-		log.Fatal("No server exists")
-	}
+	// var servers []models.Server
+	// sc.DB.Find(&servers)
+	// totalServer := len(servers)
+	// if totalServer == 0 {
+	// 	log.Fatal("No server exists")
+	// }
+
+	var server models.Server
+	sc.DB.Limit(1).Find(&server)
 	now := time.Now()
-	for _, server := range servers {
-		var status string
-		var uptime float64
-		url := strings.Join([]string{"http://", server.ID, ":8000/status"}, "")
-		response, err := http.Get(url)
-		// response, err := http.Get("http://192.168.2.0:8000/status")
-		if err != nil {
-			status = "offline"
-			continue
-		}
+	// for _, server := range servers {
+	var status string
+	var uptime float64
+	// IdServer := "127.0.0.1"
+	// url := strings.Join([]string{"http://", IdServer, ":8000/status"}, "")
+	// response, err := http.Get(url)
+	response, err := http.Get("http://localhost:8000/status")
+	if err != nil {
+		status = "offline"
+
+	} else {
 		status = "online"
 		responseData, err := ioutil.ReadAll(response.Body)
 		if err != nil {
@@ -344,20 +347,18 @@ func (sc ServerController) UpdateStatusServer(ctx *gin.Context) {
 			log.Fatal(err1)
 		}
 		uptime, _ = strconv.ParseFloat(responseServer.UpdateTime, 8)
-		// fmt.Println(responseServer.UpdateTime)
-		// fmt.Println(responseServer.Status)
-
-		serverToUpdate := models.Server{
-			ID:            server.ID,
-			Name:          server.Name,
-			Status:        status,
-			Uptime:        uptime,
-			Ipv4:          server.Ipv4,
-			IdUserManager: server.IdUserManager,
-			CreatedTime:   server.CreatedTime,
-			LastUpdated:   now,
-		}
-
-		sc.DB.Model(&server).Updates(serverToUpdate)
 	}
+	serverToUpdate := models.Server{
+		ID:            server.ID,
+		Name:          server.Name,
+		Status:        status,
+		Uptime:        uptime,
+		Ipv4:          server.Ipv4,
+		IdUserManager: server.IdUserManager,
+		CreatedTime:   server.CreatedTime,
+		LastUpdated:   now,
+	}
+
+	sc.DB.Model(&server).Updates(serverToUpdate)
+	// }
 }

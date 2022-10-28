@@ -7,7 +7,7 @@ import (
 
 func (sc *ServerRouteController) DailyReportManuallyRoute(rg *gin.RouterGroup) {
 
-	router := rg.Group("dailyreport")
+	router := rg.Group("report")
 	router.Use(middleware.DeserializeUser())
-	router.GET("/manually", sc.serverController.DailyReportManually)
+	router.GET("/manually", sc.serverController.ReportManually)
 }
